@@ -106,6 +106,45 @@ class Board:
             H += WIN
         if has_win_in_one(opp):
             H -= -WIN
+
+        def four_window(vals):
+            p = vals.count(player)
+            o = vals.count(opp)
+            e = vals.count(0)
+
+            # connect4 impossible
+            if p > 0 and o > 0:
+                return 0.0
+
+            # good for player
+            if o == 0:
+                if p == 3 and e == 1: return 300.0
+                if p == 2 and e == 2: return 40.0
+                return 0.0
+
+            # good for opponent
+            if p == 0:
+                if o == 3 and e == 1: return -380.0
+                if o == 2 and e == 2: return -45.0
+                return 0.0
+            return 0.0
+
+        for r in range(6): #hor
+            for c in range(4):
+                H += four_window([self.grid[c + i][r] for i in range(4)])
+
+        for c in range(7): #vert
+            for r in range(3):
+                H += four_window([self.grid[c][r + i] for i in range(4)])
+
+        for c in range(4): #diag ↗
+            for r in range(3):
+                H += four_window([self.grid[c + i][r + i] for i in range(4)])
+
+        for c in range(4): #diag ↘
+            for r in range(3, 6):
+                H += four_window([self.grid[c + i][r - i] for i in range(4)])
+
         return H
 
     def copy(self):
