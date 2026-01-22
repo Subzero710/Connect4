@@ -83,67 +83,75 @@ class Board:
 # c=7 r=6
 
     def eval(self, player):
-        opp = adversary(player)
+        opponent = adversary(player)
         H = 0.0
 
-        for row in range(6):  #positional score based on weights
+        #Score gain from pure disk placement
+        for row in range(6):
             for col in range(7):
-                disk = self.grid[col][row]
-                if disk == player:
+                cell = self.grid[col][row]
+                if cell == player:
                     H += position_weights[row][col]
-                elif disk == opp:
+                elif cell == opponent:
                     H -= position_weights[row][col]
 
-        def has_win_in_one(p):
-            for col in self.get_possible_moves():
-                board = self.copy()
-                board.add_disk(col, p, update_display=False)
-                if board.check_victory():
-                    return True
-            return False
+        #Score gain from "Red likes odd numbers"
+        def parity_ok(pl, row_index):
+            return (row_index % 2 == 0) if pl == 1 else (row_index % 2 == 1)
 
-        if has_win_in_one(player):
-            H += WIN
-        if has_win_in_one(opp):
-            H -= WIN
+        # Weights
+        MAJOR_PLAYER = 300.0
+        MAJOR_OPP = -380.0
+        PARITY_MAJOR_BONUS = 60.0
+        MINOR_PLAYER = 35.0
+        MINOR_OPP = -40.0
 
-        def four_window(vals):
-            player_count = vals.count(player)
-            opponent_count = vals.count(opp)
-            empty_count = vals.count(0)
+        def threat_score(cells):
+            values = [self.grid[c][r] for (c, r) in cells]
 
-            # connect4 impossible
+            player_count = values.count(player)
+            opponent_count = values.count(opponent)
+            empty_count = values.count(0)
+
             if player_count > 0 and opponent_count > 0:
                 return 0.0
 
-            # good for player
-            if opponent_count == 0:
-                if player_count == 3 and empty_count == 1: return 300.0
-                if player_count == 2 and empty_count == 2: return 40.0
-                return 0.0
+            # Major threats (3+1)
+            if opponent_count == 0 and player_count == 3 and empty_count == 1:
+                hole_row = cells[values.index(0)][1]
+                base = MAJOR_PLAYER
+                if parity_ok(player, hole_row):
+                    base += PARITY_MAJOR_BONUS
+                return base
 
-            # good for opponent
-            if player_count == 0:
-                if opponent_count == 3 and empty_count == 1: return -380.0
-                if opponent_count == 2 and empty_count == 2: return -45.0
-                return 0.0
+            if player_count == 0 and opponent_count == 3 and empty_count == 1:
+                hole_row = cells[values.index(0)][1]
+                base = MAJOR_OPP
+                if parity_ok(opponent, hole_row):
+                    base -= PARITY_MAJOR_BONUS
+                return base
+
+            # Minor threat pairs (2+2)
+            if opponent_count == 0 and player_count == 2 and empty_count == 2:
+                return MINOR_PLAYER
+            if player_count == 0 and opponent_count == 2 and empty_count == 2:
+                return MINOR_OPP
+
             return 0.0
 
-        for row in range(6): #hor
+        #parse the 69 groups of 4 disks
+        for row in range(6):  #hor
             for col in range(4):
-                H += four_window([self.grid[col + i][row] for i in range(4)])
-
-        for col in range(7): #vert
+                H += threat_score([(col + i, row) for i in range(4)])
+        for col in range(7):  #vert
             for row in range(3):
-                H += four_window([self.grid[col][row + i] for i in range(4)])
-
-        for col in range(4): #diag \
+                H += threat_score([(col, row + i) for i in range(4)])
+        for col in range(4):  #diag/
             for row in range(3):
-                H += four_window([self.grid[col + i][row + i] for i in range(4)])
-
-        for col in range(4): #diag /
+                H += threat_score([(col + i, row + i) for i in range(4)])
+        for col in range(4):  #diag\
             for row in range(3, 6):
-                H += four_window([self.grid[col + i][row - i] for i in range(4)])
+                H += threat_score([(col + i, row - i) for i in range(4)])
 
         return H
 
