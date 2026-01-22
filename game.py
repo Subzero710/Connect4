@@ -26,7 +26,7 @@ print(np.matrix(tab_weights))
 
 WIN = 10**9
 
-def other(p):
+def adversary(p):
     return 3 - p
 
 def alpha_beta_decision(board, turn, depth, queue, max_player):
@@ -37,7 +37,7 @@ def alpha_beta_decision(board, turn, depth, queue, max_player):
     for move in board.get_possible_moves():
         b = board.copy()
         b.add_disk(move, max_player, update_display=False)
-        val = alphabeta(b, depth-1, alpha, beta, other(max_player), max_player)
+        val = alphabeta(b, depth - 1, alpha, beta, adversary(max_player), max_player)
         if val > best_val:
             best_val, best_move = val, move
         alpha = max(alpha, best_val)
@@ -46,7 +46,7 @@ def alpha_beta_decision(board, turn, depth, queue, max_player):
 
 def alphabeta(board, depth, alpha, beta, to_play, max_player):
     if board.check_victory():
-        winner = other(to_play)
+        winner = adversary(to_play)
         return WIN if winner == max_player else -WIN
 
     moves = board.get_possible_moves()
@@ -60,7 +60,7 @@ def alphabeta(board, depth, alpha, beta, to_play, max_player):
         for m in moves:
             b = board.copy()
             b.add_disk(m, to_play, update_display=False)
-            v = max(v, alphabeta(b, depth-1, alpha, beta, other(to_play), max_player))
+            v = max(v, alphabeta(b, depth - 1, alpha, beta, adversary(to_play), max_player))
             alpha = max(alpha, v)
             if alpha >= beta:
                 break
@@ -70,7 +70,7 @@ def alphabeta(board, depth, alpha, beta, to_play, max_player):
         for m in moves:
             b = board.copy()
             b.add_disk(m, to_play, update_display=False)
-            v = min(v, alphabeta(b, depth-1, alpha, beta, other(to_play), max_player))
+            v = min(v, alphabeta(b, depth - 1, alpha, beta, adversary(to_play), max_player))
             beta = min(beta, v)
             if alpha >= beta:
                 break
@@ -83,15 +83,29 @@ class Board:
 # c=7 r=6
 
     def eval(self, player):
-        opp = 3 - player
+        opp = adversary(player)
         H = 0.0
-        for r in range(6):
+
+        for r in range(6):  #positional score based on weights
             for c in range(7):
                 disk = self.grid[c][r]
                 if disk == player:
                     H += tab_weights[r][c]
                 elif disk == opp:
                     H -= tab_weights[r][c]
+
+        def has_win_in_one(pl):
+            for col in self.get_possible_moves():
+                b = self.copy()
+                b.add_disk(col, pl, update_display=False)
+                if b.check_victory():
+                    return True
+            return False
+
+        if has_win_in_one(player):
+            H += WIN
+        if has_win_in_one(opp):
+            H -= -WIN
         return H
 
     def copy(self):
