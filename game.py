@@ -21,8 +21,8 @@ def add_mat(m1,m2):
         for j in range(len(m1[0])):
             m[i][j]=m1[i][j]+m2[i][j]
     return m
-tab_weights = add_mat(tab_h1 , tab_h2)
-print(np.matrix(tab_weights))
+position_weights = add_mat(tab_h1, tab_h2)
+print(np.matrix(position_weights))
 
 WIN = 10**9
 
@@ -86,64 +86,64 @@ class Board:
         opp = adversary(player)
         H = 0.0
 
-        for r in range(6):  #positional score based on weights
-            for c in range(7):
-                disk = self.grid[c][r]
+        for row in range(6):  #positional score based on weights
+            for col in range(7):
+                disk = self.grid[col][row]
                 if disk == player:
-                    H += tab_weights[r][c]
+                    H += position_weights[row][col]
                 elif disk == opp:
-                    H -= tab_weights[r][c]
+                    H -= position_weights[row][col]
 
-        def has_win_in_one(pl):
+        def has_win_in_one(p):
             for col in self.get_possible_moves():
-                b = self.copy()
-                b.add_disk(col, pl, update_display=False)
-                if b.check_victory():
+                board = self.copy()
+                board.add_disk(col, p, update_display=False)
+                if board.check_victory():
                     return True
             return False
 
         if has_win_in_one(player):
             H += WIN
         if has_win_in_one(opp):
-            H -= -WIN
+            H -= WIN
 
         def four_window(vals):
-            p = vals.count(player)
-            o = vals.count(opp)
-            e = vals.count(0)
+            player_count = vals.count(player)
+            opponent_count = vals.count(opp)
+            empty_count = vals.count(0)
 
             # connect4 impossible
-            if p > 0 and o > 0:
+            if player_count > 0 and opponent_count > 0:
                 return 0.0
 
             # good for player
-            if o == 0:
-                if p == 3 and e == 1: return 300.0
-                if p == 2 and e == 2: return 40.0
+            if opponent_count == 0:
+                if player_count == 3 and empty_count == 1: return 300.0
+                if player_count == 2 and empty_count == 2: return 40.0
                 return 0.0
 
             # good for opponent
-            if p == 0:
-                if o == 3 and e == 1: return -380.0
-                if o == 2 and e == 2: return -45.0
+            if player_count == 0:
+                if opponent_count == 3 and empty_count == 1: return -380.0
+                if opponent_count == 2 and empty_count == 2: return -45.0
                 return 0.0
             return 0.0
 
-        for r in range(6): #hor
-            for c in range(4):
-                H += four_window([self.grid[c + i][r] for i in range(4)])
+        for row in range(6): #hor
+            for col in range(4):
+                H += four_window([self.grid[col + i][row] for i in range(4)])
 
-        for c in range(7): #vert
-            for r in range(3):
-                H += four_window([self.grid[c][r + i] for i in range(4)])
+        for col in range(7): #vert
+            for row in range(3):
+                H += four_window([self.grid[col][row + i] for i in range(4)])
 
-        for c in range(4): #diag ↗
-            for r in range(3):
-                H += four_window([self.grid[c + i][r + i] for i in range(4)])
+        for col in range(4): #diag \
+            for row in range(3):
+                H += four_window([self.grid[col + i][row + i] for i in range(4)])
 
-        for c in range(4): #diag ↘
-            for r in range(3, 6):
-                H += four_window([self.grid[c + i][r - i] for i in range(4)])
+        for col in range(4): #diag /
+            for row in range(3, 6):
+                H += four_window([self.grid[col + i][row - i] for i in range(4)])
 
         return H
 
