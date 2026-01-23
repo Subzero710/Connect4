@@ -13,8 +13,8 @@ player_type = ['human']
 for i in range(42):
     player_type.append('AI: alpha-beta level '+str(i+1))
     
-tab_h1 = [[round(i**1.5, 2) if i <= 3 else round((6-i)**1.5, 2) for i in range(7)] for j in range(6)]
-tab_h2 = [[round(j**1.5, 2) if j <= 2 else round((5-j)**1.5, 2) for i in range(7)] for j in range(6)]
+tab_h1 = [[i if i <= 3 else (6-i) for i in range(7)] for j in range(6)]
+tab_h2 = [[j if j <= 2 else (5-j) for i in range(7)] for j in range(6)]
 def add_mat(m1,m2):
     m=[[0 for i in range(7)] for j in range(6)]
     for i in range(len(m1)):
